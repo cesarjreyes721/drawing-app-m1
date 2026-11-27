@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Color the Car — Drawing App Milestone 3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #2b2a4a;
+      --ink-soft: #5a587a;
+      --paper: #fffdf8;
+      --bg1: #fff4dc;
+      --bg2: #cce9ff;
+      --card: #ffffff;
+      --accent: #ff7ab6;
+      --shadow: 0 16px 40px rgba(62, 48, 110, 0.14);
+      --swatch-size: 56px;
+      --ui-radius: 22px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(1200px 700px at 15% -10%, #ffe7a8 0%, transparent 55%),
+        radial-gradient(1000px 600px at 110% 10%, #d4f0ff 0%, transparent 50%),
+        linear-gradient(180deg, var(--bg1) 0%, #f7fbff 42%, var(--bg2) 100%);
+      color: var(--ink);
+      font-family: "Fredoka", "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+      min-height: 100dvh;
+      padding: max(10px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+    }
+
+    .app {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    .title-block { min-width: 0; flex: 1; }
+
+    .title-block h1 {
+      font-size: clamp(1.2rem, 4.4vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .title-block p {
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+      font-weight: 500;
+      margin-top: 2px;
+      line-height: 1.25;
+    }
+
+    .pills {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      background: rgba(255, 255, 255, 0.82);
+      border: 2px solid rgba(43, 42, 74, 0.08);
+      box-shadow: 0 4px 12px rgba(43, 42, 74, 0.06);
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .pill .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #c5c3d6;
+      flex-shrink: 0;
+    }
+
+    .pill.is-inside {
+      background: #e8fff4;
+      border-color: #6fe3ad;
+      color: #0d7a4d;
+    }
+
+    .pill.is-inside .dot {
+      background: #19c37d;
+      animation: pulseDot 1.1s ease-out infinite;
+    }
+
+    .pill.is-outside {
+      background: #fff6f2;
+      border-color: #ffd0c2;
+      color: #a14a32;
+    }
+
+    .pill.is-outside .dot { background: #ff8a6b; }
+
+    @keyframes pulseDot {
+      0% { box-shadow: 0 0 0 0 rgba(25, 195, 125, 0.55); }
+      70% { box-shadow: 0 0 0 8px rgba(25, 195, 125, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(25, 195, 125, 0); }
+    }
+
+    .coverage {
+      min-width: 128px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .coverage-bar {
+      flex: 1;
+      height: 8px;
+      min-width: 56px;
+      border-radius: 999px;
+      background: rgba(43, 42, 74, 0.1);
+      overflow: hidden;
+    }
+
+    .coverage-bar > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffc43d, #ff7ab6);
+      transition: width 200ms ease;
+    }
+
+    .coverage.is-complete {
+      background: #fff3c4;
+      border-color: #ffd56a;
+      color: #8a5a00;
+    }
+
+    .stage-shell {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+      background: var(--card);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage {
+      position: relative;
+      width: min(100%, calc(100dvh - 270px), 640px);
+      aspect-ratio: 1 / 1;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
+    .stage canvas,
+    .stage svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+
+    .stage svg { overflow: visible; }
+
+    .stage.is-inside-hover .outline-active {
+      filter: drop-shadow(0 0 10px rgba(61, 169, 252, 0.4));
+    }
+
+    .yay {
+      position: absolute;
+      left: 50%;
+      top: 10%;
+      transform: translateX(-50%) scale(0.6);
+      opacity: 0;
+      pointer-events: none;
+      font-size: clamp(1.6rem, 6vw, 2.4rem);
+      font-weight: 700;
+      color: #ff7ab6;
+      text-shadow: 0 6px 0 rgba(255, 196, 61, 0.45);
+      z-index: 8;
+    }
+
+    .yay.show { animation: yayPop 1100ms ease-out forwards; }
+
+    @keyframes yayPop {
+      0% { opacity: 0; transform: translate(-50%, 18px) scale(0.5) rotate(-8deg); }
+      25% { opacity: 1; transform: translate(-50%, 0) scale(1.18) rotate(4deg); }
+      70% { opacity: 1; transform: translate(-50%, -8px) scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: translate(-50%, -36px) scale(0.9) rotate(0deg); }
+    }
+
+    .sparkle-layer, .confetti-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 7;
+    }
+
+    .spark {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      margin: -5px 0 0 -5px;
+      pointer-events: none;
+      border-radius: 1px;
+      background: #ffe07a;
+      box-shadow: 0 0 8px rgba(255, 224, 122, 0.9);
+      animation: sparkFly 0.7s ease-out forwards;
+    }
+
+    @keyframes sparkFly {
+      0% { opacity: 1; transform: translate(0, 0) scale(0.4) rotate(0deg); }
+      70% { opacity: 1; }
+      100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.1) rotate(120deg); }
+    }
+
+    .confetti-piece {
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      width: 10px;
+      height: 14px;
+      margin: -5px 0 0 -5px;
+      border-radius: 2px;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .badge-node.pop { animation: badgePop 0.5s cubic-bezier(0.22, 1.4, 0.36, 1); transform-box: fill-box; transform-origin: center; }
+
+    @keyframes badgePop {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.28); }
+      100% { transform: scale(1); }
+    }
+
+    .toolbar {
+      flex-shrink: 0;
+      background: var(--card);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      padding: 10px 12px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .swatches {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      width: 100%;
+      padding: 6px 8px 4px;
+    }
+
+    .swatch {
+      width: var(--swatch-size);
+      height: var(--swatch-size);
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 4px 0 rgba(43, 42, 74, 0.12), inset 0 -4px 0 rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 120ms ease;
+      position: relative;
+      flex: 0 0 var(--swatch-size);
+    }
+
+    .swatch:active { transform: scale(0.92); }
+
+    .swatch[aria-pressed="true"] {
+      transform: translateY(-2px) scale(1.08);
+      box-shadow:
+        0 0 0 4px #fff,
+        0 0 0 7px var(--ink),
+        0 6px 0 rgba(43, 42, 74, 0.12);
+    }
+
+    .swatch:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: 3px;
+    }
+
+    .swatch-num {
+      position: absolute;
+      right: -4px;
+      bottom: -4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      color: var(--ink);
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 0 rgba(43, 42, 74, 0.18);
+      border: 2px solid var(--ink);
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto auto;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      touch-action: manipulation;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 16px;
+      min-height: 52px;
+      padding: 0 12px;
+      color: var(--ink);
+      background: #f3f0ff;
+      box-shadow: 0 3px 0 rgba(43, 42, 74, 0.12);
+      transition: transform 120ms ease, background 120ms ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(43, 42, 74, 0.12); }
+    .btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+    .btn[aria-pressed="true"] {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-wiggle { background: #ffe07a; }
+    .btn-reset { background: #ffe4ea; }
+    .mode-icon { font-size: 1.05rem; line-height: 1; }
+
+    @media (max-width: 420px) {
+      :root { --swatch-size: 46px; }
+      .actions { grid-template-columns: 1fr 1fr; }
+      .btn { min-height: 48px; font-size: 0.92rem; }
+      body { padding-left: 8px; padding-right: 8px; }
+      .swatch-num { width: 18px; height: 18px; font-size: 0.65rem; }
+      .title-block p { font-size: 0.8rem; }
+    }
+
+    @media (max-height: 760px) {
+      .app { gap: 8px; }
+      .stage-shell { padding: 8px; border-radius: 22px; }
+      .toolbar { padding: 8px 10px 10px; gap: 8px; border-radius: 22px; }
+      .btn { min-height: 46px; }
+      .stage { width: min(100%, calc(100dvh - 250px), 640px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pill .dot, .yay.show, .spark, .badge-node.pop { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title-block">
+        <h1>Color the Car!</h1>
+        <p>Color each numbered part, then give it a wiggle.</p>
+      </div>
+      <div class="pills">
+        <div class="pill" id="statusPill" aria-live="polite">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="statusText">Ready to color</span>
+        </div>
+        <div class="pill coverage" id="coveragePill">
+          <div class="coverage-bar" aria-hidden="true"><span id="coverageBar"></span></div>
+          <span id="coverageText">0 of 6 colored</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="stage-shell">
+      <div class="stage" id="stage">
+        <svg viewBox="0 0 800 800" aria-hidden="true">
+          <defs>
+            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#eef6ff" />
+              <stop offset="58%" stop-color="#fff8ea" />
+              <stop offset="100%" stop-color="#f3e6c8" />
+            </linearGradient>
+            <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#5a4a8a" flood-opacity="0.14" />
+            </filter>
+            <filter id="badgeHalo" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#ffffff" flood-opacity="0.95" />
+            </filter>
+          </defs>
+          <rect width="800" height="800" fill="url(#skyGrad)" />
+          <ellipse cx="400" cy="650" rx="320" ry="30" fill="#e2d3b6" opacity="0.55" />
+          <path class="paper" d="M220.00 355.00C155.00 355.00 95.00 385.00 82.00 450.00C75.00 492.00 100.00 532.00 148.00 532.00L660.00 532.00C698.00 532.00 726.00 516.00 734.00 488.00C742.00 456.00 732.00 398.00 696.00 382.00C668.00 370.00 635.00 355.00 595.00 355.00L220.00 355.00Z" fill="#fffaf3" filter="url(#softShadow)" />
+          <path class="paper" d="M228.00 355.00C225.00 320.00 232.00 250.00 250.00 210.00C275.00 150.00 325.00 132.00 395.00 132.00C470.00 132.00 522.00 155.00 542.00 215.00C558.00 255.00 560.00 315.00 557.00 355.00Z" fill="#fff6f0" />
+          <path class="paper" d="M275.00 318.00L275.00 228.00C275.00 208.00 290.00 196.00 312.00 196.00L500.00 196.00C522.00 196.00 536.00 208.00 536.00 228.00L536.00 318.00C536.00 330.00 524.00 338.00 510.00 338.00L300.00 338.00C286.00 338.00 275.00 330.00 275.00 318.00Z" fill="#eef7ff" />
+          <path class="paper" d="M721.00 415.00 A46.00 46.00 0 1 1 629.00 415.00 A46.00 46.00 0 1 1 721.00 415.00 Z" fill="#fff8d6" />
+          <path class="paper" d="M299.00 548.00 A94.00 94.00 0 1 1 111.00 548.00 A94.00 94.00 0 1 1 299.00 548.00 Z" fill="#f3f3f7" />
+          <path class="paper" d="M689.00 548.00 A94.00 94.00 0 1 1 501.00 548.00 A94.00 94.00 0 1 1 689.00 548.00 Z" fill="#f3f3f7" />
+        </svg>
+
+        <canvas id="paint-body" class="paint-layer" data-region="2"></canvas>
+        <canvas id="paint-roof" class="paint-layer" data-region="1"></canvas>
+        <canvas id="paint-wheel-back" class="paint-layer" data-region="5"></canvas>
+        <canvas id="paint-wheel-front" class="paint-layer" data-region="6"></canvas>
+        <canvas id="paint-headlight" class="paint-layer" data-region="4"></canvas>
+        <canvas id="paint-window" class="paint-layer" data-region="3"></canvas>
+
+        <svg viewBox="0 0 800 800" role="img" aria-label="Color-by-number drawing of a cute cartoon car with six numbered parts">
+          <g class="outlines" fill="none" stroke="#2b2a4a" stroke-linejoin="round" stroke-linecap="round">
+            <path class="outline" data-region="2" d="M220.00 355.00C155.00 355.00 95.00 385.00 82.00 450.00C75.00 492.00 100.00 532.00 148.00 532.00L660.00 532.00C698.00 532.00 726.00 516.00 734.00 488.00C742.00 456.00 732.00 398.00 696.00 382.00C668.00 370.00 635.00 355.00 595.00 355.00L220.00 355.00Z" stroke-width="14" />
+            <path class="outline" data-region="1" d="M228.00 355.00C225.00 320.00 232.00 250.00 250.00 210.00C275.00 150.00 325.00 132.00 395.00 132.00C470.00 132.00 522.00 155.00 542.00 215.00C558.00 255.00 560.00 315.00 557.00 355.00Z" stroke-width="14" />
+            <path class="outline" data-region="3" d="M275.00 318.00L275.00 228.00C275.00 208.00 290.00 196.00 312.00 196.00L500.00 196.00C522.00 196.00 536.00 208.00 536.00 228.00L536.00 318.00C536.00 330.00 524.00 338.00 510.00 338.00L300.00 338.00C286.00 338.00 275.00 330.00 275.00 318.00Z" stroke-width="12" />
+            <path class="outline" data-region="4" d="M721.00 415.00 A46.00 46.00 0 1 1 629.00 415.00 A46.00 46.00 0 1 1 721.00 415.00 Z" stroke-width="12" />
+            <path class="outline" data-region="5" d="M299.00 548.00 A94.00 94.00 0 1 1 111.00 548.00 A94.00 94.00 0 1 1 299.00 548.00 Z" stroke-width="14" />
+            <path class="outline" data-region="6" d="M689.00 548.00 A94.00 94.00 0 1 1 501.00 548.00 A94.00 94.00 0 1 1 689.00 548.00 Z" stroke-width="14" />
+          </g>
+
+          <g class="decor" pointer-events="none" fill="none" stroke="#2b2a4a" stroke-linecap="round">
+            <circle cx="205" cy="548" r="40" stroke-width="8" />
+            <circle cx="595" cy="548" r="40" stroke-width="8" />
+            <path d="M688 468 Q708 490 722 472" stroke-width="7" />
+            <ellipse cx="500" cy="230" rx="18" ry="10" fill="#fff" stroke="none" opacity="0.45" />
+          </g>
+
+          <g id="badges" pointer-events="none">
+            <g class="badge-node" data-region="1" transform="translate(395 168)">
+              <circle r="26" fill="#fff" opacity="0.55" />
+              <circle r="20" fill="#fff" stroke="#2b2a4a" stroke-width="3.5" filter="url(#badgeHalo)" />
+              <text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Fredoka, Trebuchet MS, sans-serif" font-size="22" font-weight="700" fill="#2b2a4a">1</text>
+            </g>
+            <g class="badge-node" data-region="2" transform="translate(400 430)">
+              <circle r="26" fill="#fff" opacity="0.55" />
+              <circle r="20" fill="#fff" stroke="#2b2a4a" stroke-width="3.5" filter="url(#badgeHalo)" />
+              <text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Fredoka, Trebuchet MS, sans-serif" font-size="22" font-weight="700" fill="#2b2a4a">2</text>
+            </g>
+            <g class="badge-node" data-region="3" transform="translate(405 266)">
+              <circle r="26" fill="#fff" opacity="0.55" />
+              <circle r="20" fill="#fff" stroke="#2b2a4a" stroke-width="3.5" filter="url(#badgeHalo)" />
+              <text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Fredoka, Trebuchet MS, sans-serif" font-size="22" font-weight="700" fill="#2b2a4a">3</text>
+            </g>
+            <g class="badge-node" data-region="4" transform="translate(675 415)">
+              <circle r="26" fill="#fff" opacity="0.55" />
+              <circle r="20" fill="#fff" stroke="#2b2a4a" stroke-width="3.5" filter="url(#badgeHalo)" />
+              <text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Fredoka, Trebuchet MS, sans-serif" font-size="22" font-weight="700" fill="#2b2a4a">4</text>
+            </g>
+            <g class="badge-node" data-region="5" transform="translate(205 548)">
+              <circle r="26" fill="#fff" opacity="0.55" />
+              <circle r="20" fill="#fff" stroke="#2b2a4a" stroke-width="3.5" filter="url(#badgeHalo)" />
+              <text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Fredoka, Trebuchet MS, sans-serif" font-size="22" font-weight="700" fill="#2b2a4a">5</text>
+            </g>
+            <g class="badge-node" data-region="6" transform="translate(595 548)">
+              <circle r="26" fill="#fff" opacity="0.55" />
+              <circle r="20" fill="#fff" stroke="#2b2a4a" stroke-width="3.5" filter="url(#badgeHalo)" />
+              <text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Fredoka, Trebuchet MS, sans-serif" font-size="22" font-weight="700" fill="#2b2a4a">6</text>
+            </g>
+          </g>
+        </svg>
+
+        <div class="sparkle-layer" id="sparkleLayer"></div>
+        <div class="confetti-layer" id="confettiLayer"></div>
+        <div class="yay" id="yay" aria-hidden="true">Yay!</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="swatches" id="swatches" role="listbox" aria-label="Colors"></div>
+      <div class="actions">
+        <button class="btn" id="brushBtn" type="button" aria-pressed="false">
+          <span class="mode-icon" aria-hidden="true">🖌️</span> Brush
+        </button>
+        <button class="btn" id="bucketBtn" type="button" aria-pressed="true">
+          <span class="mode-icon" aria-hidden="true">🪣</span> Fill
+        </button>
+        <button class="btn btn-wiggle" id="wiggleBtn" type="button">Wiggle!</button>
+        <button class="btn btn-reset" id="resetBtn" type="button">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    var VIEW = 800;
+    var COLORS = [
+      { name: "Cherry", hex: "#FF5A5F", hint: 1 },
+      { name: "Sunny", hex: "#FFC43D", hint: 2 },
+      { name: "Pink", hex: "#FF7AB6", hint: 3 },
+      { name: "Mint", hex: "#3DDC97", hint: 4 },
+      { name: "Grape", hex: "#9B5DE5", hint: 5 },
+      { name: "Sky", hex: "#3DA9FC", hint: 6 }
+    ];
+    var BRUSH_WIDTH = 34;
+    var TAP_MOVE = 10;
+    var TAP_MS = 280;
+    var DRAW_MOVE = 3;
+    var COVERAGE_SIZE = 200;
+    var AUTO_FILL_AT = 0.70;
+
+    var REGION_DEFS = [
+      { id: 1, key: "roof", name: "Roof", short: "Roof", canvasId: "paint-roof", badge: [395, 168], origin: [395, 168], z: 3,
+        d: "M228.00 355.00C225.00 320.00 232.00 250.00 250.00 210.00C275.00 150.00 325.00 132.00 395.00 132.00C470.00 132.00 522.00 155.00 542.00 215.00C558.00 255.00 560.00 315.00 557.00 355.00Z" },
+      { id: 2, key: "body", name: "Car Body", short: "Body", canvasId: "paint-body", badge: [400, 430], origin: [400, 430], z: 1,
+        d: "M220.00 355.00C155.00 355.00 95.00 385.00 82.00 450.00C75.00 492.00 100.00 532.00 148.00 532.00L660.00 532.00C698.00 532.00 726.00 516.00 734.00 488.00C742.00 456.00 732.00 398.00 696.00 382.00C668.00 370.00 635.00 355.00 595.00 355.00L220.00 355.00Z" },
+      { id: 3, key: "window", name: "Window", short: "Window", canvasId: "paint-window", badge: [405, 266], origin: [405, 266], z: 6,
+        d: "M275.00 318.00L275.00 228.00C275.00 208.00 290.00 196.00 312.00 196.00L500.00 196.00C522.00 196.00 536.00 208.00 536.00 228.00L536.00 318.00C536.00 330.00 524.00 338.00 510.00 338.00L300.00 338.00C286.00 338.00 275.00 330.00 275.00 318.00Z" },
+      { id: 4, key: "headlight", name: "Headlight", short: "Headlight", canvasId: "paint-headlight", badge: [675, 415], origin: [675, 415], z: 5,
+        d: "M721.00 415.00 A46.00 46.00 0 1 1 629.00 415.00 A46.00 46.00 0 1 1 721.00 415.00 Z" },
+      { id: 5, key: "wheelBack", name: "Back Wheel", short: "Back Wheel", canvasId: "paint-wheel-back", badge: [205, 548], origin: [205, 548], z: 4,
+        d: "M299.00 548.00 A94.00 94.00 0 1 1 111.00 548.00 A94.00 94.00 0 1 1 299.00 548.00 Z" },
+      { id: 6, key: "wheelFront", name: "Front Wheel", short: "Front Wheel", canvasId: "paint-wheel-front", badge: [595, 548], origin: [595, 548], z: 4,
+        d: "M689.00 548.00 A94.00 94.00 0 1 1 501.00 548.00 A94.00 94.00 0 1 1 689.00 548.00 Z" }
+    ];
+
+    var stage = document.getElementById("stage");
+    var statusPill = document.getElementById("statusPill");
+    var statusText = document.getElementById("statusText");
+    var coveragePill = document.getElementById("coveragePill");
+    var coverageBar = document.getElementById("coverageBar");
+    var coverageText = document.getElementById("coverageText");
+    var brushBtn = document.getElementById("brushBtn");
+    var bucketBtn = document.getElementById("bucketBtn");
+    var wiggleBtn = document.getElementById("wiggleBtn");
+    var resetBtn = document.getElementById("resetBtn");
+    var yay = document.getElementById("yay");
+    var swatchesEl = document.getElementById("swatches");
+    var sparkleLayer = document.getElementById("sparkleLayer");
+    var confettiLayer = document.getElementById("confettiLayer");
+
+    var hitCanvas = document.createElement("canvas");
+    hitCanvas.width = VIEW;
+    hitCanvas.height = VIEW;
+    var hitCtx = hitCanvas.getContext("2d");
+
+    var dpr = 1;
+    var color = COLORS[0].hex;
+    var mode = "bucket";
+    var pointerId = null;
+    var drawing = false;
+    var strokeLive = false;
+    var lockedRegion = null;
+    var lastX = 0;
+    var lastY = 0;
+    var lastInside = false;
+    var downX = 0;
+    var downY = 0;
+    var downT = 0;
+    var downRegion = null;
+    var maxMove = 0;
+    var celebrated = false;
+    var celebrating = false;
+    var coloredCount = 0;
+    var reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var wiggleTween = null;
+    var hoverRegion = null;
+
+    var regions = REGION_DEFS.map(function (def) {
+      var canvas = document.getElementById(def.canvasId);
+      var r = {
+        id: def.id,
+        key: def.key,
+        name: def.name,
+        short: def.short,
+        d: def.d,
+        badge: def.badge,
+        origin: def.origin,
+        z: def.z,
+        canvas: canvas,
+        ctx: canvas.getContext("2d", { willReadFrequently: true }),
+        path: new Path2D(def.d),
+        maskCanvas: document.createElement("canvas"),
+        maskCtx: null,
+        maskData: null,
+        totalInside: 0,
+        coverage: 0,
+        filled: false,
+        fillColor: null,
+        autoFilled: false,
+        filling: false,
+        hardenRaf: 0,
+        fillRaf: 0
+      };
+      r.maskCanvas.width = COVERAGE_SIZE;
+      r.maskCanvas.height = COVERAGE_SIZE;
+      r.maskCtx = r.maskCanvas.getContext("2d", { willReadFrequently: true });
+      return r;
+    });
+
+    regions.sort(function (a, b) { return a.id - b.id; });
+    var byZFront = regions.slice().sort(function (a, b) { return b.z - a.z; });
+
+    function byId(id) {
+      for (var i = 0; i < regions.length; i++) if (regions[i].id === id) return regions[i];
+      return null;
+    }
+
+    function frontRegions(r) {
+      return byZFront.filter(function (front) { return front.z > r.z; });
+    }
+
+    function punchFront(ctx, r) {
+      var fronts = frontRegions(r);
+      if (!fronts.length) return;
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = "#000";
+      fronts.forEach(function (front) { ctx.fill(front.path); });
+      ctx.restore();
+    }
+
+    function currentDpr() {
+      return Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    }
+
+    function setupMasks() {
+      regions.forEach(function (r) {
+        var ctx = r.maskCtx;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, COVERAGE_SIZE, COVERAGE_SIZE);
+        ctx.setTransform(COVERAGE_SIZE / VIEW, 0, 0, COVERAGE_SIZE / VIEW, 0, 0);
+        ctx.fillStyle = "#fff";
+        ctx.fill(r.path);
+        ctx.globalCompositeOperation = "destination-out";
+        frontRegions(r).forEach(function (front) { ctx.fill(front.path); });
+        ctx.globalCompositeOperation = "source-over";
+        r.maskData = ctx.getImageData(0, 0, COVERAGE_SIZE, COVERAGE_SIZE).data;
+        r.totalInside = 0;
+        for (var i = 3; i < r.maskData.length; i += 4) {
+          if (r.maskData[i] > 128) r.totalInside++;
+        }
+      });
+    }
+
+    function resizeCanvases() {
+      dpr = currentDpr();
+      var px = Math.round(VIEW * dpr);
+      regions.forEach(function (r) {
+        var bits = null;
+        if (r.canvas.width && r.canvas.height) {
+          bits = document.createElement("canvas");
+          bits.width = r.canvas.width;
+          bits.height = r.canvas.height;
+          bits.getContext("2d").drawImage(r.canvas, 0, 0);
+        }
+        r.canvas.width = px;
+        r.canvas.height = px;
+        r.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (bits) {
+          r.ctx.save();
+          r.ctx.setTransform(1, 0, 0, 1, 0, 0);
+          r.ctx.drawImage(bits, 0, 0, px, px);
+          r.ctx.restore();
+        }
+      });
+    }
+
+    function eventToLocal(e) {
+      var rect = stage.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) * (VIEW / rect.width),
+        y: (e.clientY - rect.top) * (VIEW / rect.height)
+      };
+    }
+
+    function hitRegion(x, y) {
+      for (var i = 0; i < byZFront.length; i++) {
+        if (hitCtx.isPointInPath(byZFront[i].path, x, y)) return byZFront[i];
+      }
+      return null;
+    }
+
+    function isOwned(r, x, y) {
+      if (!hitCtx.isPointInPath(r.path, x, y)) return false;
+      var fronts = frontRegions(r);
+      for (var i = 0; i < fronts.length; i++) {
+        if (hitCtx.isPointInPath(fronts[i].path, x, y)) return false;
+      }
+      return true;
+    }
+
+    function setStatus(region, hovering) {
+      statusPill.classList.toggle("is-inside", !!region);
+      statusPill.classList.toggle("is-outside", hovering && !region);
+      stage.classList.toggle("is-inside-hover", !!region);
+      hoverRegion = region;
+      document.querySelectorAll(".outline").forEach(function (el) {
+        var id = Number(el.getAttribute("data-region"));
+        el.classList.toggle("outline-active", !!(region && region.id === id));
+      });
+      if (!hovering) {
+        statusText.textContent = "Ready to color";
+        statusPill.classList.remove("is-inside", "is-outside");
+        stage.classList.remove("is-inside-hover");
+        return;
+      }
+      statusText.textContent = region
+        ? ("Section " + region.id + " · " + region.short)
+        : "Outside shapes";
+    }
+
+    function prepareStrokeCtx(ctx) {
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = BRUSH_WIDTH;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+    }
+
+    function hardenClip(r) {
+      var ctx = r.ctx;
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalCompositeOperation = "destination-in";
+      ctx.fillStyle = "#000";
+      ctx.fill(r.path);
+      ctx.restore();
+      punchFront(ctx, r);
+    }
+
+    function scheduleHarden(r) {
+      if (r.hardenRaf) return;
+      r.hardenRaf = requestAnimationFrame(function () {
+        r.hardenRaf = 0;
+        hardenClip(r);
+      });
+    }
+
+    function withStrokeClip(r, fn) {
+      var ctx = r.ctx;
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.beginPath();
+      ctx.clip(r.path);
+      prepareStrokeCtx(ctx);
+      fn(ctx);
+      ctx.restore();
+      scheduleHarden(r);
+    }
+
+    function withFillClip(r, fn) {
+      var ctx = r.ctx;
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.beginPath();
+      ctx.clip(r.path);
+      fn(ctx);
+      ctx.restore();
+      hardenClip(r);
+    }
+
+    function beginStroke(r, x, y) {
+      strokeLive = true;
+      lastX = x;
+      lastY = y;
+      withStrokeClip(r, function (ctx) {
+        ctx.beginPath();
+        ctx.arc(x, y, BRUSH_WIDTH / 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function extendStroke(r, x0, y0, x1, y1) {
+      withStrokeClip(r, function (ctx) {
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+      });
+    }
+
+    function computeCoverage(r) {
+      var sample = document.createElement("canvas");
+      sample.width = COVERAGE_SIZE;
+      sample.height = COVERAGE_SIZE;
+      var sctx = sample.getContext("2d", { willReadFrequently: true });
+      sctx.drawImage(r.canvas, 0, 0, COVERAGE_SIZE, COVERAGE_SIZE);
+      var data = sctx.getImageData(0, 0, COVERAGE_SIZE, COVERAGE_SIZE).data;
+      var painted = 0;
+      for (var i = 0; i < data.length; i += 4) {
+        if (r.maskData[i + 3] > 128 && data[i + 3] > 32) painted++;
+      }
+      return r.totalInside ? painted / r.totalInside : 0;
+    }
+
+    var coverageRaf = 0;
+    function scheduleCoverage(triggerAuto, region) {
+      if (coverageRaf) return;
+      coverageRaf = requestAnimationFrame(function () {
+        coverageRaf = 0;
+        if (region) updateRegionCoverage(region, triggerAuto);
+        else regions.forEach(function (r) { updateRegionCoverage(r, false); });
+        updateProgress();
+      });
+    }
+
+    function updateRegionCoverage(r, triggerAuto) {
+      r.coverage = computeCoverage(r);
+      if (triggerAuto && !r.autoFilled && !r.filling && !r.filled && r.coverage >= AUTO_FILL_AT && r.coverage < 0.999) {
+        r.autoFilled = true;
+        animateFill(r, r.origin[0], r.origin[1], true);
+      }
+    }
+
+    function updateProgress() {
+      coloredCount = 0;
+      regions.forEach(function (r) {
+        if (r.filled || r.coverage >= AUTO_FILL_AT) coloredCount++;
+      });
+      var pct = (coloredCount / regions.length) * 100;
+      coverageBar.style.width = pct + "%";
+      coverageText.textContent = coloredCount + " of 6 colored";
+      coveragePill.classList.toggle("is-complete", coloredCount >= 6);
+      if (coloredCount >= 6 && !celebrated) {
+        celebrated = true;
+        celebrateAll();
+      }
+    }
+
+    function solidFill(r, hex) {
+      var fillColor = hex || color;
+      r.fillColor = fillColor;
+      withFillClip(r, function (ctx) {
+        ctx.fillStyle = fillColor;
+        ctx.fill(r.path);
+      });
+      r.filled = true;
+      r.autoFilled = true;
+      r.coverage = 1;
+    }
+
+    function animateFill(r, originX, originY, fromAuto, done) {
+      if (r.filling) return;
+      r.filling = true;
+      var fillColor = color;
+      r.fillColor = fillColor;
+      var start = performance.now();
+      var dur = reducedMotion ? 1 : 480;
+      var maxR = 900;
+
+      function frame(now) {
+        if (!r.filling) return;
+        var t = Math.max(0, Math.min(1, (now - start) / dur));
+        var eased = 1 - Math.pow(1 - t, 3);
+        var rad = Math.max(0, maxR * eased);
+        withFillClip(r, function (ctx) {
+          ctx.fillStyle = fillColor;
+          ctx.beginPath();
+          ctx.arc(originX, originY, rad, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        if (t < 1) {
+          r.fillRaf = requestAnimationFrame(frame);
+        } else {
+          solidFill(r, fillColor);
+          r.filling = false;
+          popBadge(r.id);
+          sparkleAt(r.badge[0], r.badge[1]);
+          updateProgress();
+          if (done) done();
+        }
+      }
+      r.fillRaf = requestAnimationFrame(frame);
+    }
+
+    function fillRegion(id, hex, instant, origin) {
+      var r = byId(id);
+      if (!r) return;
+      if (hex) {
+        color = hex;
+        syncSwatchPressed();
+      }
+      var o = origin || r.origin;
+      if (instant || reducedMotion) {
+        solidFill(r, hex || color);
+        popBadge(r.id);
+        sparkleAt(r.badge[0], r.badge[1]);
+        updateProgress();
+        return;
+      }
+      animateFill(r, o[0], o[1], false);
+    }
+
+    function popBadge(id) {
+      var node = document.querySelector('.badge-node[data-region="' + id + '"]');
+      if (!node) return;
+      node.classList.remove("pop");
+      void node.offsetWidth;
+      node.classList.add("pop");
+    }
+
+    function sparkleAt(vx, vy) {
+      if (reducedMotion) return;
+      var rect = stage.getBoundingClientRect();
+      var sx = (vx / VIEW) * rect.width;
+      var sy = (vy / VIEW) * rect.height;
+      var colors = COLORS.map(function (c) { return c.hex; }).concat(["#ffe07a", "#fff"]);
+      for (var i = 0; i < 8; i++) {
+        var s = document.createElement("span");
+        s.className = "spark";
+        var ang = (Math.PI * 2 * i) / 8 + Math.random() * 0.3;
+        var dist = 22 + Math.random() * 28;
+        s.style.left = sx + "px";
+        s.style.top = sy + "px";
+        s.style.background = colors[i % colors.length];
+        s.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+        s.style.setProperty("--dy", Math.sin(ang) * dist + "px");
+        sparkleLayer.appendChild(s);
+        window.setTimeout(function (el) { el.remove(); }, 750, s);
+      }
+    }
+
+    function burstConfetti() {
+      confettiLayer.innerHTML = "";
+      if (reducedMotion) return;
+      var colors = COLORS.map(function (c) { return c.hex; }).concat(["#ffe07a", "#ffffff", "#ff9bb8"]);
+      var pieces = [];
+      for (var i = 0; i < 52; i++) {
+        var p = document.createElement("span");
+        p.className = "confetti-piece";
+        p.style.background = colors[i % colors.length];
+        p.style.width = (7 + (i % 5)) + "px";
+        p.style.height = (10 + (i % 6)) + "px";
+        p.style.borderRadius = i % 3 === 0 ? "50%" : "2px";
+        confettiLayer.appendChild(p);
+        pieces.push(p);
+      }
+      if (window.gsap) {
+        pieces.forEach(function (p, i) {
+          var dx = (Math.random() - 0.5) * 420;
+          var dy = -80 - Math.random() * 260;
+          var rot = (Math.random() - 0.5) * 720;
+          window.gsap.fromTo(p,
+            { opacity: 1, x: 0, y: 0, rotation: 0, scale: 0.6 },
+            { opacity: 0, x: dx, y: dy + 200, rotation: rot, scale: 1, duration: 1.15 + Math.random() * 0.5, ease: "power2.out", delay: i * 0.006 }
+          );
+        });
+      } else {
+        pieces.forEach(function (p, i) {
+          var dx = (Math.random() - 0.5) * 420;
+          var dy = -80 - Math.random() * 200;
+          p.animate(
+            [
+              { opacity: 1, transform: "translate(0,0) rotate(0deg)" },
+              { opacity: 0, transform: "translate(" + dx + "px," + (dy + 180) + "px) rotate(" + (Math.random() * 400) + "deg)" }
+            ],
+            { duration: 1200, delay: i * 6, easing: "ease-out", fill: "forwards" }
+          );
+        });
+      }
+    }
+
+    function showYay() {
+      yay.classList.remove("show");
+      void yay.offsetWidth;
+      yay.classList.add("show");
+    }
+
+    function celebrateAll() {
+      celebrating = true;
+      burstConfetti();
+      showYay();
+      playWiggle(true);
+      window.setTimeout(function () { celebrating = false; }, 1400);
+    }
+
+    function playWiggle(celebrate) {
+      var el = stage;
+      var rot = celebrate ? 12 : 8;
+      var hop = celebrate ? -28 : -18;
+      if (window.gsap) {
+        if (wiggleTween) wiggleTween.kill();
+        window.gsap.set(el, { transformOrigin: "50% 50%", rotation: 0, scaleX: 1, scaleY: 1, y: 0 });
+        wiggleTween = window.gsap.timeline({ defaults: { ease: "power2.out" } });
+        if (reducedMotion) {
+          wiggleTween.to(el, { scaleX: 1.03, scaleY: 1.03, duration: 0.16 })
+                     .to(el, { scaleX: 1, scaleY: 1, duration: 0.16 });
+        } else {
+          wiggleTween
+            .to(el, { rotation: -rot, scaleX: 1.1, scaleY: 0.88, y: hop * 0.45, duration: 0.11 })
+            .to(el, { rotation: rot, scaleX: 0.9, scaleY: 1.1, y: hop, duration: 0.13 })
+            .to(el, { rotation: -rot * 0.6, scaleX: 1.06, scaleY: 0.94, y: hop * 0.4, duration: 0.11 })
+            .to(el, { rotation: rot * 0.35, scaleX: 0.98, scaleY: 1.03, y: hop * 0.12, duration: 0.1 })
+            .to(el, { rotation: 0, scaleX: 1, scaleY: 1, y: 0, duration: 0.16 });
+        }
+        return;
+      }
+      if (el.animate) {
+        el.animate(
+          reducedMotion
+            ? [{ transform: "none" }, { transform: "scale(1.03)" }, { transform: "none" }]
+            : [
+                { transform: "none" },
+                { transform: "rotate(-8deg) scale(1.1, 0.88) translateY(-8px)" },
+                { transform: "rotate(8deg) scale(0.9, 1.1) translateY(-18px)" },
+                { transform: "rotate(-5deg) scale(1.06, 0.94) translateY(-6px)" },
+                { transform: "rotate(3deg) scale(0.98, 1.03) translateY(-2px)" },
+                { transform: "none" }
+              ],
+          { duration: reducedMotion ? 300 : 620, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+        );
+      } else {
+        el.classList.remove("css-wiggle");
+        void el.offsetWidth;
+        el.classList.add("css-wiggle");
+        setTimeout(function () { el.classList.remove("css-wiggle"); }, 700);
+      }
+    }
+
+    function setMode(next) {
+      mode = next === "brush" ? "brush" : "bucket";
+      brushBtn.setAttribute("aria-pressed", mode === "brush" ? "true" : "false");
+      bucketBtn.setAttribute("aria-pressed", mode === "bucket" ? "true" : "false");
+    }
+
+    function syncSwatchPressed() {
+      var buttons = swatchesEl.querySelectorAll(".swatch");
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].setAttribute("aria-pressed", buttons[i].getAttribute("data-hex") === color ? "true" : "false");
+      }
+    }
+
+    function setColor(hex) {
+      color = hex;
+      syncSwatchPressed();
+    }
+
+    function buildSwatches() {
+      COLORS.forEach(function (c, index) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "swatch";
+        b.style.background = c.hex;
+        b.setAttribute("data-hex", c.hex);
+        b.setAttribute("aria-label", c.name + ", color-by-number hint " + c.hint);
+        b.setAttribute("role", "option");
+        b.setAttribute("aria-pressed", index === 0 ? "true" : "false");
+        var num = document.createElement("span");
+        num.className = "swatch-num";
+        num.textContent = String(c.hint);
+        b.appendChild(num);
+        b.addEventListener("click", function () { setColor(c.hex); });
+        swatchesEl.appendChild(b);
+      });
+    }
+
+    function resetAll() {
+      regions.forEach(function (r) {
+        if (r.fillRaf) cancelAnimationFrame(r.fillRaf);
+        if (r.hardenRaf) cancelAnimationFrame(r.hardenRaf);
+        r.fillRaf = 0;
+        r.hardenRaf = 0;
+        r.ctx.save();
+        r.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        r.ctx.clearRect(0, 0, r.canvas.width, r.canvas.height);
+        r.ctx.restore();
+        r.filled = false;
+        r.autoFilled = false;
+        r.filling = false;
+        r.coverage = 0;
+        r.fillColor = null;
+      });
+      celebrated = false;
+      celebrating = false;
+      coloredCount = 0;
+      pointerId = null;
+      drawing = false;
+      strokeLive = false;
+      lockedRegion = null;
+      yay.classList.remove("show");
+      confettiLayer.innerHTML = "";
+      sparkleLayer.innerHTML = "";
+      updateProgress();
+      setStatus(null, false);
+    }
+
+    function onPointerDown(e) {
+      if (pointerId !== null) return;
+      if (e.button !== undefined && e.button !== 0) return;
+      var p = eventToLocal(e);
+      pointerId = e.pointerId;
+      drawing = true;
+      strokeLive = false;
+      downX = p.x;
+      downY = p.y;
+      lastX = p.x;
+      lastY = p.y;
+      downT = performance.now();
+      downRegion = hitRegion(p.x, p.y);
+      lockedRegion = mode === "brush" ? downRegion : null;
+      lastInside = !!downRegion;
+      maxMove = 0;
+      setStatus(downRegion, true);
+      if (stage.setPointerCapture) {
+        try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+      if (e.cancelable) e.preventDefault();
+    }
+
+    function onPointerMove(e) {
+      var p = eventToLocal(e);
+      var region = hitRegion(p.x, p.y);
+      if (pointerId === null || e.pointerId !== pointerId) {
+        setStatus(region, true);
+        return;
+      }
+      var dist = Math.hypot(p.x - downX, p.y - downY);
+      if (dist > maxMove) maxMove = dist;
+      setStatus(lockedRegion || region, true);
+      if (mode === "brush" && drawing && lockedRegion && maxMove >= DRAW_MOVE) {
+        if (!strokeLive) beginStroke(lockedRegion, lastX, lastY);
+        extendStroke(lockedRegion, lastX, lastY, p.x, p.y);
+        lastX = p.x;
+        lastY = p.y;
+        scheduleCoverage(true, lockedRegion);
+      }
+      if (e.cancelable) e.preventDefault();
+    }
+
+    function endPointer(e) {
+      if (pointerId === null || (e && e.pointerId !== pointerId)) return;
+      var p = e && e.clientX !== undefined ? eventToLocal(e) : { x: lastX, y: lastY };
+      var dt = performance.now() - downT;
+      var wasTap = maxMove < TAP_MOVE && dt < TAP_MS;
+      var regionNow = hitRegion(p.x, p.y);
+      var didDraw = mode === "brush" && lockedRegion && maxMove >= DRAW_MOVE;
+
+      if (wasTap && (downRegion || regionNow)) {
+        var tapRegion = downRegion || regionNow;
+        if (mode === "bucket") {
+          animateFill(tapRegion, p.x, p.y, false);
+        } else {
+          playWiggle(false);
+        }
+      } else if (didDraw) {
+        if (lockedRegion.hardenRaf) {
+          cancelAnimationFrame(lockedRegion.hardenRaf);
+          lockedRegion.hardenRaf = 0;
+        }
+        hardenClip(lockedRegion);
+        updateRegionCoverage(lockedRegion, true);
+        updateProgress();
+      }
+
+      drawing = false;
+      strokeLive = false;
+      pointerId = null;
+      lockedRegion = null;
+      var keepHover = e && e.type !== "pointerleave" && e.type !== "pointercancel";
+      setStatus(regionNow, keepHover);
+    }
+
+    function onPointerUp(e) { endPointer(e); }
+
+    function onPointerLeave(e) {
+      if (pointerId === null) setStatus(null, false);
+    }
+
+    function countPaintedExclusive(id) {
+      var r = byId(id);
+      if (!r) return 0;
+      var size = COVERAGE_SIZE;
+      var sample = document.createElement("canvas");
+      sample.width = size;
+      sample.height = size;
+      var sctx = sample.getContext("2d", { willReadFrequently: true });
+      sctx.drawImage(r.canvas, 0, 0, size, size);
+      var data = sctx.getImageData(0, 0, size, size).data;
+      var painted = 0;
+      for (var i = 0; i < data.length; i += 4) {
+        if (r.maskData[i + 3] > 128 && data[i + 3] > 32) painted++;
+      }
+      return painted;
+    }
+
+    function countPaintedOnCanvas(id) {
+      var r = byId(id);
+      if (!r) return 0;
+      var size = COVERAGE_SIZE;
+      var sample = document.createElement("canvas");
+      sample.width = size;
+      sample.height = size;
+      var sctx = sample.getContext("2d", { willReadFrequently: true });
+      sctx.drawImage(r.canvas, 0, 0, size, size);
+      var data = sctx.getImageData(0, 0, size, size).data;
+      var painted = 0;
+      for (var i = 3; i < data.length; i += 4) {
+        if (data[i] > 32) painted++;
+      }
+      return painted;
+    }
+
+    function countPaintedOutsideAll() {
+      var size = COVERAGE_SIZE;
+      var sample = document.createElement("canvas");
+      sample.width = size;
+      sample.height = size;
+      var sctx = sample.getContext("2d", { willReadFrequently: true });
+      var backToFront = regions.slice().sort(function (a, b) { return a.z - b.z; });
+      backToFront.forEach(function (r) { sctx.drawImage(r.canvas, 0, 0, size, size); });
+      var union = document.createElement("canvas");
+      union.width = size;
+      union.height = size;
+      var uctx = union.getContext("2d");
+      uctx.setTransform(size / VIEW, 0, 0, size / VIEW, 0, 0);
+      uctx.fillStyle = "#fff";
+      regions.forEach(function (r) { uctx.fill(r.path); });
+      // Dilate the union mask 1px so downsample antialiasing at outlines is not counted as spill.
+      uctx.setTransform(1, 0, 0, 1, 0, 0);
+      uctx.globalCompositeOperation = "source-over";
+      var raw = document.createElement("canvas");
+      raw.width = size; raw.height = size;
+      raw.getContext("2d").drawImage(union, 0, 0);
+      uctx.clearRect(0, 0, size, size);
+      for (var ox = -1; ox <= 1; ox++) {
+        for (var oy = -1; oy <= 1; oy++) {
+          uctx.drawImage(raw, ox, oy);
+        }
+      }
+      var paint = sctx.getImageData(0, 0, size, size).data;
+      var mask = uctx.getImageData(0, 0, size, size).data;
+      var outside = 0;
+      for (var i = 0; i < paint.length; i += 4) {
+        if (paint[i + 3] > 32 && mask[i + 3] <= 128) outside++;
+      }
+      return outside;
+    }
+
+    function drawTestStroke(id, points, hex) {
+      var r = byId(id);
+      if (!r || !points || points.length < 1) return;
+      var prev = color;
+      if (hex) color = hex;
+      beginStroke(r, points[0][0], points[0][1]);
+      for (var i = 1; i < points.length; i++) {
+        extendStroke(r, points[i - 1][0], points[i - 1][1], points[i][0], points[i][1]);
+      }
+      if (r.hardenRaf) { cancelAnimationFrame(r.hardenRaf); r.hardenRaf = 0; }
+      hardenClip(r);
+      updateRegionCoverage(r, false);
+      updateProgress();
+      color = prev;
+    }
+
+    stage.addEventListener("pointerdown", onPointerDown);
+    stage.addEventListener("pointermove", onPointerMove);
+    stage.addEventListener("pointerup", onPointerUp);
+    stage.addEventListener("pointercancel", onPointerUp);
+    stage.addEventListener("pointerleave", onPointerLeave);
+    stage.addEventListener("lostpointercapture", function (e) {
+      if (e.pointerId === pointerId) endPointer(e);
+    });
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    window.addEventListener("pointermove", function (e) {
+      if (pointerId !== null && e.pointerId === pointerId) onPointerMove(e);
+    });
+    stage.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+    brushBtn.addEventListener("click", function () { setMode("brush"); });
+    bucketBtn.addEventListener("click", function () { setMode("bucket"); });
+    wiggleBtn.addEventListener("click", function () { playWiggle(false); });
+    resetBtn.addEventListener("click", resetAll);
+
+    window.addEventListener("resize", function () {
+      resizeCanvases();
+    });
+
+    buildSwatches();
+    setupMasks();
+    resizeCanvases();
+    updateProgress();
+
+    window.__twinkle = {
+      VIEW: VIEW,
+      regions: regions.map(function (r) {
+        return { id: r.id, key: r.key, name: r.name, short: r.short, badge: r.badge, origin: r.origin, d: r.d };
+      }),
+      hitRegion: function (x, y) {
+        var r = hitRegion(x, y);
+        return r ? r.id : 0;
+      },
+      isInsideRegion: function (id, x, y) {
+        var r = hitRegion(x, y);
+        return !!(r && r.id === id);
+      },
+      setMode: setMode,
+      getMode: function () { return mode; },
+      setColor: setColor,
+      getColor: function () { return color; },
+      fillRegion: fillRegion,
+      getRegionFilled: function (id) { var r = byId(id); return !!(r && r.filled); },
+      getRegionCoverage: function (id) { var r = byId(id); return r ? r.coverage : 0; },
+      getRegionFillColor: function (id) { var r = byId(id); return r ? r.fillColor : null; },
+      getColoredCount: function () { return coloredCount; },
+      didCelebrate: function () { return celebrated; },
+      isCelebrating: function () { return celebrating; },
+      playWiggle: playWiggle,
+      resetAll: resetAll,
+      countPaintedExclusive: countPaintedExclusive,
+      countPaintedOnCanvas: countPaintedOnCanvas,
+      countPaintedOutsideAll: countPaintedOutsideAll,
+      drawTestStroke: drawTestStroke,
+      getStage: function () { return stage; },
+      eventToLocal: eventToLocal
+    };
+  })();
+  </script>
+  <style>
+    @keyframes cssWiggle {
+      0% { transform: none; }
+      20% { transform: rotate(-8deg) scale(1.1, 0.88) translateY(-8px); }
+      40% { transform: rotate(8deg) scale(0.9, 1.1) translateY(-18px); }
+      60% { transform: rotate(-5deg) scale(1.06, 0.94) translateY(-6px); }
+      80% { transform: rotate(3deg) scale(0.98, 1.03) translateY(-2px); }
+      100% { transform: none; }
+    }
+    .stage.css-wiggle { animation: cssWiggle 0.62s cubic-bezier(0.22, 1, 0.36, 1); }
+  </style>
+</body>
+</html>
