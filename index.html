@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Color Twinkle — Drawing App Milestone 1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #2b2a4a;
+      --ink-soft: #5a587a;
+      --paper: #fffdf8;
+      --star-paper: #fffaf3;
+      --bg1: #fff4dc;
+      --bg2: #cce9ff;
+      --card: #ffffff;
+      --accent: #ff7ab6;
+      --shadow: 0 16px 40px rgba(62, 48, 110, 0.14);
+      --swatch-size: 56px;
+      --ui-radius: 22px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background:
+        radial-gradient(1200px 700px at 15% -10%, #ffe7a8 0%, transparent 55%),
+        radial-gradient(1000px 600px at 110% 10%, #d4f0ff 0%, transparent 50%),
+        linear-gradient(180deg, var(--bg1) 0%, #f7fbff 42%, var(--bg2) 100%);
+      color: var(--ink);
+      font-family: "Fredoka", "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+      min-height: 100dvh;
+      padding: max(12px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom));
+    }
+
+    .app {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+      min-height: 0;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .title-block h1 {
+      font-size: clamp(1.35rem, 4.4vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .title-block p {
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .pills {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      background: rgba(255, 255, 255, 0.82);
+      border: 2px solid rgba(43, 42, 74, 0.08);
+      box-shadow: 0 4px 12px rgba(43, 42, 74, 0.06);
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
+      user-select: none;
+    }
+
+    .pill .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #c5c3d6;
+      box-shadow: 0 0 0 0 rgba(61, 220, 151, 0.0);
+    }
+
+    .pill.is-inside {
+      background: #e8fff4;
+      border-color: #6fe3ad;
+      color: #0d7a4d;
+    }
+
+    .pill.is-inside .dot {
+      background: #19c37d;
+      animation: pulseDot 1.1s ease-out infinite;
+    }
+
+    .pill.is-outside {
+      background: #fff6f2;
+      border-color: #ffd0c2;
+      color: #a14a32;
+    }
+
+    .pill.is-outside .dot { background: #ff8a6b; }
+
+    @keyframes pulseDot {
+      0% { box-shadow: 0 0 0 0 rgba(25, 195, 125, 0.55); }
+      70% { box-shadow: 0 0 0 8px rgba(25, 195, 125, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(25, 195, 125, 0); }
+    }
+
+    .coverage {
+      min-width: 132px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .coverage-bar {
+      flex: 1;
+      height: 8px;
+      min-width: 64px;
+      border-radius: 999px;
+      background: rgba(43, 42, 74, 0.1);
+      overflow: hidden;
+    }
+
+    .coverage-bar > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffc43d, #ff7ab6);
+      transition: width 200ms ease;
+    }
+
+    .coverage.is-complete {
+      background: #fff3c4;
+      border-color: #ffd56a;
+      color: #8a5a00;
+    }
+
+    .stage-shell {
+      flex: 1;
+      min-height: 0;
+      background: var(--card);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .stage {
+      position: relative;
+      width: min(100%, calc(100dvh - 280px), 640px);
+      aspect-ratio: 1 / 1;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
+    .stage canvas,
+    .stage svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+
+    .stage svg { overflow: visible; }
+
+    #hitLayer { pointer-events: auto; touch-action: none; cursor: crosshair; }
+
+    .stage.is-inside-hover .outline {
+      filter: drop-shadow(0 0 10px rgba(61, 169, 252, 0.35));
+    }
+
+    .yay {
+      position: absolute;
+      left: 50%;
+      top: 12%;
+      transform: translateX(-50%) scale(0.6);
+      opacity: 0;
+      pointer-events: none;
+      font-size: clamp(1.6rem, 6vw, 2.3rem);
+      font-weight: 700;
+      color: #ff7ab6;
+      text-shadow: 0 6px 0 rgba(255, 196, 61, 0.45);
+      z-index: 5;
+    }
+
+    .yay.show {
+      animation: yayPop 900ms ease-out forwards;
+    }
+
+    @keyframes yayPop {
+      0% { opacity: 0; transform: translate(-50%, 18px) scale(0.5) rotate(-8deg); }
+      30% { opacity: 1; transform: translate(-50%, 0) scale(1.15) rotate(4deg); }
+      70% { opacity: 1; transform: translate(-50%, -6px) scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: translate(-50%, -28px) scale(0.9) rotate(0deg); }
+    }
+
+    .toolbar {
+      flex-shrink: 0;
+      background: var(--card);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      padding: 12px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .swatches {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: var(--swatch-size);
+      height: var(--swatch-size);
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 4px 0 rgba(43, 42, 74, 0.12), inset 0 -4px 0 rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 120ms ease;
+      position: relative;
+    }
+
+    .swatch:active { transform: scale(0.92); }
+
+    .swatch[aria-pressed="true"] {
+      transform: translateY(-2px) scale(1.08);
+      box-shadow:
+        0 0 0 4px #fff,
+        0 0 0 7px var(--ink),
+        0 6px 0 rgba(43, 42, 74, 0.12);
+    }
+
+    .swatch:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: 3px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto auto;
+      gap: 8px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      touch-action: manipulation;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 16px;
+      min-height: 52px;
+      padding: 0 14px;
+      color: var(--ink);
+      background: #f3f0ff;
+      box-shadow: 0 3px 0 rgba(43, 42, 74, 0.12);
+      transition: transform 120ms ease, background 120ms ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(43, 42, 74, 0.12); }
+    .btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+    .btn[aria-pressed="true"] {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-wiggle {
+      background: #ffe07a;
+    }
+
+    .btn-reset {
+      background: #ffe4ea;
+    }
+
+    .mode-icon { font-size: 1.05rem; line-height: 1; }
+
+    @media (max-width: 420px) {
+      :root { --swatch-size: 46px; }
+      .actions { grid-template-columns: 1fr 1fr; }
+      .btn { min-height: 48px; }
+      body { padding-left: 10px; padding-right: 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pill .dot, .yay.show { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title-block">
+        <h1>Color Twinkle!</h1>
+        <p>Draw inside the star, then give it a wiggle.</p>
+      </div>
+      <div class="pills">
+        <div class="pill" id="statusPill" aria-live="polite">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="statusText">Ready to color</span>
+        </div>
+        <div class="pill coverage" id="coveragePill">
+          <div class="coverage-bar" aria-hidden="true"><span id="coverageBar"></span></div>
+          <span id="coverageText">0%</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="stage-shell">
+      <div class="stage" id="stage">
+        <svg viewBox="0 0 800 800" aria-hidden="true">
+          <defs>
+            <filter id="starShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#5a4a8a" flood-opacity="0.18" />
+            </filter>
+          </defs>
+          <path
+            class="paper"
+            d="M366.01 130.21Q400.00 60.00 433.99 130.21L476.70 218.44Q501.10 268.85 556.58 276.48L653.69 289.84Q730.97 300.46 674.70 354.48L603.98 422.37Q563.58 461.15 573.47 516.27L590.78 612.76Q604.55 689.54 535.79 652.72L449.37 606.44Q400.00 580.00 350.63 606.44L264.21 652.72Q195.45 689.54 209.22 612.76L226.53 516.27Q236.42 461.15 196.02 422.37L125.30 354.48Q69.03 300.46 146.31 289.84L243.42 276.48Q298.90 268.85 323.30 218.44Z"
+            fill="#fffaf3"
+            filter="url(#starShadow)"
+          />
+        </svg>
+
+        <canvas id="fillCanvas"></canvas>
+        <canvas id="strokeCanvas"></canvas>
+
+        <svg viewBox="0 0 800 800" role="img" aria-label="A chubby smiling star named Twinkle">
+          <path
+            class="outline"
+            id="starPath"
+            d="M366.01 130.21Q400.00 60.00 433.99 130.21L476.70 218.44Q501.10 268.85 556.58 276.48L653.69 289.84Q730.97 300.46 674.70 354.48L603.98 422.37Q563.58 461.15 573.47 516.27L590.78 612.76Q604.55 689.54 535.79 652.72L449.37 606.44Q400.00 580.00 350.63 606.44L264.21 652.72Q195.45 689.54 209.22 612.76L226.53 516.27Q236.42 461.15 196.02 422.37L125.30 354.48Q69.03 300.46 146.31 289.84L243.42 276.48Q298.90 268.85 323.30 218.44Z"
+            fill="none"
+            stroke="#2b2a4a"
+            stroke-width="15"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+          <g class="face" pointer-events="none">
+            <ellipse cx="334" cy="428" rx="22" ry="14" fill="#ff9bb8" opacity="0.55" />
+            <ellipse cx="466" cy="428" rx="22" ry="14" fill="#ff9bb8" opacity="0.55" />
+            <ellipse cx="354" cy="386" rx="26" ry="30" fill="#fff" stroke="#2b2a4a" stroke-width="7" />
+            <ellipse cx="446" cy="386" rx="26" ry="30" fill="#fff" stroke="#2b2a4a" stroke-width="7" />
+            <ellipse cx="358" cy="394" rx="12" ry="14" fill="#2b2a4a" />
+            <ellipse cx="450" cy="394" rx="12" ry="14" fill="#2b2a4a" />
+            <circle cx="363" cy="387" r="4.5" fill="#fff" />
+            <circle cx="455" cy="387" r="4.5" fill="#fff" />
+            <path d="M366 448 Q400 478 434 448" fill="none" stroke="#2b2a4a" stroke-width="8" stroke-linecap="round" />
+          </g>
+        </svg>
+
+        <svg id="hitLayer" viewBox="0 0 800 800" aria-hidden="true">
+          <path
+            d="M366.01 130.21Q400.00 60.00 433.99 130.21L476.70 218.44Q501.10 268.85 556.58 276.48L653.69 289.84Q730.97 300.46 674.70 354.48L603.98 422.37Q563.58 461.15 573.47 516.27L590.78 612.76Q604.55 689.54 535.79 652.72L449.37 606.44Q400.00 580.00 350.63 606.44L264.21 652.72Q195.45 689.54 209.22 612.76L226.53 516.27Q236.42 461.15 196.02 422.37L125.30 354.48Q69.03 300.46 146.31 289.84L243.42 276.48Q298.90 268.85 323.30 218.44Z"
+            fill="transparent"
+            stroke="transparent"
+            stroke-width="15"
+          />
+        </svg>
+
+        <div class="yay" id="yay" aria-hidden="true">Yay!</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="swatches" id="swatches" role="listbox" aria-label="Colors"></div>
+      <div class="actions">
+        <button class="btn" id="brushBtn" type="button" aria-pressed="true">
+          <span class="mode-icon" aria-hidden="true">🖌️</span> Brush
+        </button>
+        <button class="btn" id="bucketBtn" type="button" aria-pressed="false">
+          <span class="mode-icon" aria-hidden="true">🪣</span> Fill
+        </button>
+        <button class="btn btn-wiggle" id="wiggleBtn" type="button">Wiggle!</button>
+        <button class="btn btn-reset" id="resetBtn" type="button">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    var VIEW = 800;
+    var STAR_D = "M366.01 130.21Q400.00 60.00 433.99 130.21L476.70 218.44Q501.10 268.85 556.58 276.48L653.69 289.84Q730.97 300.46 674.70 354.48L603.98 422.37Q563.58 461.15 573.47 516.27L590.78 612.76Q604.55 689.54 535.79 652.72L449.37 606.44Q400.00 580.00 350.63 606.44L264.21 652.72Q195.45 689.54 209.22 612.76L226.53 516.27Q236.42 461.15 196.02 422.37L125.30 354.48Q69.03 300.46 146.31 289.84L243.42 276.48Q298.90 268.85 323.30 218.44Z";
+    var COLORS = [
+      { name: "Cherry", hex: "#FF5A5F" },
+      { name: "Sunny", hex: "#FFC43D" },
+      { name: "Mint", hex: "#3DDC97" },
+      { name: "Sky", hex: "#3DA9FC" },
+      { name: "Grape", hex: "#9B5DE5" },
+      { name: "Pink", hex: "#FF7AB6" }
+    ];
+    var BRUSH_WIDTH = 34;
+    var STEP = 2.5;
+    var TAP_MOVE = 10;
+    var TAP_MS = 250;
+    var DRAW_MOVE = 3;
+    var COVERAGE_SIZE = 220;
+    var AUTO_FILL_AT = 0.75;
+
+    var stage = document.getElementById("stage");
+    var fillCanvas = document.getElementById("fillCanvas");
+    var strokeCanvas = document.getElementById("strokeCanvas");
+    var fillCtx = fillCanvas.getContext("2d", { willReadFrequently: true });
+    var strokeCtx = strokeCanvas.getContext("2d", { willReadFrequently: true });
+    var statusPill = document.getElementById("statusPill");
+    var statusText = document.getElementById("statusText");
+    var coveragePill = document.getElementById("coveragePill");
+    var coverageBar = document.getElementById("coverageBar");
+    var coverageText = document.getElementById("coverageText");
+    var brushBtn = document.getElementById("brushBtn");
+    var bucketBtn = document.getElementById("bucketBtn");
+    var wiggleBtn = document.getElementById("wiggleBtn");
+    var resetBtn = document.getElementById("resetBtn");
+    var yay = document.getElementById("yay");
+    var swatchesEl = document.getElementById("swatches");
+
+    var shapePath = new Path2D(STAR_D);
+    var hitCanvas = document.createElement("canvas");
+    hitCanvas.width = VIEW;
+    hitCanvas.height = VIEW;
+    var hitCtx = hitCanvas.getContext("2d");
+
+    var maskCanvas = document.createElement("canvas");
+    maskCanvas.width = COVERAGE_SIZE;
+    maskCanvas.height = COVERAGE_SIZE;
+    var maskCtx = maskCanvas.getContext("2d", { willReadFrequently: true });
+    var sampleCanvas = document.createElement("canvas");
+    sampleCanvas.width = COVERAGE_SIZE;
+    sampleCanvas.height = COVERAGE_SIZE;
+    var sampleCtx = sampleCanvas.getContext("2d", { willReadFrequently: true });
+    var maskData = null;
+    var totalInside = 0;
+
+    var dpr = 1;
+    var color = COLORS[1].hex;
+    var mode = "brush";
+    var pointerId = null;
+    var drawing = false;
+    var strokeLive = false;
+    var lastX = 0;
+    var lastY = 0;
+    var lastInside = false;
+    var downX = 0;
+    var downY = 0;
+    var downT = 0;
+    var downInside = false;
+    var maxMove = 0;
+    var autoFilled = false;
+    var filling = false;
+    var coverage = 0;
+    var reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var wiggleTween = null;
+
+    function currentDpr() {
+      return Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    }
+
+    function setupMask() {
+      maskCtx.setTransform(1, 0, 0, 1, 0, 0);
+      maskCtx.clearRect(0, 0, COVERAGE_SIZE, COVERAGE_SIZE);
+      maskCtx.setTransform(COVERAGE_SIZE / VIEW, 0, 0, COVERAGE_SIZE / VIEW, 0, 0);
+      maskCtx.fillStyle = "#fff";
+      maskCtx.fill(shapePath);
+      maskData = maskCtx.getImageData(0, 0, COVERAGE_SIZE, COVERAGE_SIZE).data;
+      totalInside = 0;
+      for (var i = 3; i < maskData.length; i += 4) {
+        if (maskData[i] > 128) totalInside++;
+      }
+    }
+
+    function resizeCanvases() {
+      dpr = currentDpr();
+      var fillBits = null;
+      var strokeBits = null;
+      if (fillCanvas.width && fillCanvas.height) {
+        fillBits = document.createElement("canvas");
+        fillBits.width = fillCanvas.width;
+        fillBits.height = fillCanvas.height;
+        fillBits.getContext("2d").drawImage(fillCanvas, 0, 0);
+        strokeBits = document.createElement("canvas");
+        strokeBits.width = strokeCanvas.width;
+        strokeBits.height = strokeCanvas.height;
+        strokeBits.getContext("2d").drawImage(strokeCanvas, 0, 0);
+      }
+      var px = Math.round(VIEW * dpr);
+      fillCanvas.width = px;
+      fillCanvas.height = px;
+      strokeCanvas.width = px;
+      strokeCanvas.height = px;
+      fillCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      strokeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (fillBits) {
+        fillCtx.save();
+        fillCtx.setTransform(1, 0, 0, 1, 0, 0);
+        fillCtx.drawImage(fillBits, 0, 0, px, px);
+        fillCtx.restore();
+        strokeCtx.save();
+        strokeCtx.setTransform(1, 0, 0, 1, 0, 0);
+        strokeCtx.drawImage(strokeBits, 0, 0, px, px);
+        strokeCtx.restore();
+      }
+    }
+
+    function eventToLocal(e) {
+      var rect = stage.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) * (VIEW / rect.width),
+        y: (e.clientY - rect.top) * (VIEW / rect.height)
+      };
+    }
+
+    function isInside(x, y) {
+      return hitCtx.isPointInPath(shapePath, x, y);
+    }
+
+    function setStatus(inside, hovering) {
+      statusPill.classList.toggle("is-inside", !!inside);
+      statusPill.classList.toggle("is-outside", hovering && !inside);
+      stage.classList.toggle("is-inside-hover", !!inside);
+      if (!hovering) {
+        statusText.textContent = "Ready to color";
+        statusPill.classList.remove("is-inside", "is-outside");
+        stage.classList.remove("is-inside-hover");
+        return;
+      }
+      statusText.textContent = inside ? "Inside the star" : "Outside the star";
+    }
+
+    function prepareStrokeCtx() {
+      strokeCtx.lineCap = "round";
+      strokeCtx.lineJoin = "round";
+      strokeCtx.lineWidth = BRUSH_WIDTH;
+      strokeCtx.strokeStyle = color;
+      strokeCtx.fillStyle = color;
+    }
+
+    function hardenClip(ctx) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalCompositeOperation = "destination-in";
+      ctx.fillStyle = "#000";
+      ctx.fill(shapePath);
+      ctx.restore();
+    }
+
+    var hardenRaf = 0;
+    function scheduleHarden() {
+      if (hardenRaf) return;
+      hardenRaf = requestAnimationFrame(function () {
+        hardenRaf = 0;
+        hardenClip(strokeCtx);
+      });
+    }
+
+    function withStrokeClip(fn) {
+      strokeCtx.save();
+      strokeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      strokeCtx.beginPath();
+      strokeCtx.clip(shapePath);
+      prepareStrokeCtx();
+      fn();
+      strokeCtx.restore();
+      scheduleHarden();
+    }
+
+    function withFillClip(fn) {
+      fillCtx.save();
+      fillCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      fillCtx.beginPath();
+      fillCtx.clip(shapePath);
+      fn();
+      fillCtx.restore();
+      hardenClip(fillCtx);
+    }
+
+    function beginStroke(x, y) {
+      strokeLive = true;
+      lastX = x;
+      lastY = y;
+      withStrokeClip(function () {
+        strokeCtx.beginPath();
+        strokeCtx.arc(x, y, BRUSH_WIDTH / 2, 0, Math.PI * 2);
+        strokeCtx.fill();
+      });
+    }
+
+    function extendStroke(x0, y0, x1, y1) {
+      withStrokeClip(function () {
+        strokeCtx.beginPath();
+        strokeCtx.moveTo(x0, y0);
+        strokeCtx.lineTo(x1, y1);
+        strokeCtx.stroke();
+      });
+    }
+
+    function walkSegment(x0, y0, x1, y1) {
+      var dist = Math.hypot(x1 - x0, y1 - y0);
+      var steps = Math.max(1, Math.ceil(dist / STEP));
+      var px = x0;
+      var py = y0;
+      var pIn = isInside(x0, y0);
+      for (var i = 1; i <= steps; i++) {
+        var t = i / steps;
+        var x = x0 + (x1 - x0) * t;
+        var y = y0 + (y1 - y0) * t;
+        var inside = isInside(x, y);
+        if (inside && pIn) {
+          if (!strokeLive) beginStroke(px, py);
+          extendStroke(px, py, x, y);
+          lastX = x;
+          lastY = y;
+        } else if (!pIn && inside) {
+          beginStroke(x, y);
+        } else if (pIn && !inside) {
+          strokeLive = false;
+        }
+        px = x;
+        py = y;
+        pIn = inside;
+      }
+      lastInside = pIn;
+    }
+
+    function computeCoverage() {
+      sampleCtx.setTransform(1, 0, 0, 1, 0, 0);
+      sampleCtx.clearRect(0, 0, COVERAGE_SIZE, COVERAGE_SIZE);
+      sampleCtx.drawImage(fillCanvas, 0, 0, COVERAGE_SIZE, COVERAGE_SIZE);
+      sampleCtx.drawImage(strokeCanvas, 0, 0, COVERAGE_SIZE, COVERAGE_SIZE);
+      var data = sampleCtx.getImageData(0, 0, COVERAGE_SIZE, COVERAGE_SIZE).data;
+      var painted = 0;
+      for (var i = 0; i < data.length; i += 4) {
+        if (maskData[i + 3] > 128 && data[i + 3] > 32) painted++;
+      }
+      return totalInside ? painted / totalInside : 0;
+    }
+
+    var coverageRaf = 0;
+    function scheduleCoverage(triggerAuto) {
+      if (coverageRaf) return;
+      coverageRaf = requestAnimationFrame(function () {
+        coverageRaf = 0;
+        updateCoverage(triggerAuto);
+      });
+    }
+
+    function updateCoverage(triggerAuto) {
+      coverage = computeCoverage();
+      var pct = Math.min(100, Math.round(coverage * 100));
+      coverageBar.style.width = pct + "%";
+      coverageText.textContent = pct + "%";
+      coveragePill.classList.toggle("is-complete", pct >= 100);
+      if (triggerAuto && !autoFilled && !filling && coverage >= AUTO_FILL_AT && coverage < 0.999) {
+        autoFilled = true;
+        celebrateFill(400, 400);
+      }
+    }
+
+    function animateFill(originX, originY, done) {
+      if (filling) return;
+      filling = true;
+      var start = performance.now();
+      var dur = reducedMotion ? 1 : 520;
+      var maxR = 720;
+
+      function frame(now) {
+        var t = Math.max(0, Math.min(1, (now - start) / dur));
+        var eased = 1 - Math.pow(1 - t, 3);
+        var r = Math.max(0, maxR * eased);
+        withFillClip(function () {
+          fillCtx.fillStyle = color;
+          fillCtx.beginPath();
+          fillCtx.arc(originX, originY, r, 0, Math.PI * 2);
+          fillCtx.fill();
+        });
+        if (t < 1) {
+          requestAnimationFrame(frame);
+        } else {
+          withFillClip(function () {
+            fillCtx.fillStyle = color;
+            fillCtx.fill(shapePath);
+          });
+          filling = false;
+          autoFilled = true;
+          updateCoverage(false);
+          if (done) done();
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function celebrateFill(x, y) {
+      animateFill(x, y, function () {
+        playWiggle(true);
+        showYay();
+      });
+    }
+
+    function showYay() {
+      yay.classList.remove("show");
+      void yay.offsetWidth;
+      yay.classList.add("show");
+    }
+
+    function playWiggle(celebrate) {
+      var el = stage;
+      var rot = celebrate ? 12 : 8;
+      var hop = celebrate ? -28 : -18;
+      if (window.gsap) {
+        if (wiggleTween) wiggleTween.kill();
+        window.gsap.set(el, { transformOrigin: "50% 50%", rotation: 0, scaleX: 1, scaleY: 1, y: 0 });
+        wiggleTween = window.gsap.timeline({ defaults: { ease: "power2.out" } });
+        if (reducedMotion) {
+          wiggleTween.to(el, { scaleX: 1.03, scaleY: 1.03, duration: 0.16 })
+                     .to(el, { scaleX: 1, scaleY: 1, duration: 0.16 });
+        } else {
+          wiggleTween
+            .to(el, { rotation: -rot, scaleX: 1.1, scaleY: 0.88, y: hop * 0.45, duration: 0.11 })
+            .to(el, { rotation: rot, scaleX: 0.9, scaleY: 1.1, y: hop, duration: 0.13 })
+            .to(el, { rotation: -rot * 0.6, scaleX: 1.06, scaleY: 0.94, y: hop * 0.4, duration: 0.11 })
+            .to(el, { rotation: rot * 0.35, scaleX: 0.98, scaleY: 1.03, y: hop * 0.12, duration: 0.1 })
+            .to(el, { rotation: 0, scaleX: 1, scaleY: 1, y: 0, duration: 0.16 });
+        }
+        return;
+      }
+      if (el.animate) {
+        el.animate(
+          reducedMotion
+            ? [{ transform: "none" }, { transform: "scale(1.03)" }, { transform: "none" }]
+            : [
+                { transform: "none" },
+                { transform: "rotate(-8deg) scale(1.1, 0.88) translateY(-8px)" },
+                { transform: "rotate(8deg) scale(0.9, 1.1) translateY(-18px)" },
+                { transform: "rotate(-5deg) scale(1.06, 0.94) translateY(-6px)" },
+                { transform: "rotate(3deg) scale(0.98, 1.03) translateY(-2px)" },
+                { transform: "none" }
+              ],
+          { duration: reducedMotion ? 300 : 620, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+        );
+      } else {
+        el.classList.remove("css-wiggle");
+        void el.offsetWidth;
+        el.classList.add("css-wiggle");
+        setTimeout(function () { el.classList.remove("css-wiggle"); }, 700);
+      }
+    }
+
+    function maybeWiggleFromTap() {
+      playWiggle(false);
+    }
+
+    function setMode(next) {
+      mode = next;
+      brushBtn.setAttribute("aria-pressed", mode === "brush" ? "true" : "false");
+      bucketBtn.setAttribute("aria-pressed", mode === "bucket" ? "true" : "false");
+    }
+
+    function setColor(hex, btn) {
+      color = hex;
+      var buttons = swatchesEl.querySelectorAll(".swatch");
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].setAttribute("aria-pressed", buttons[i] === btn ? "true" : "false");
+      }
+    }
+
+    function buildSwatches() {
+      COLORS.forEach(function (c, index) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "swatch";
+        b.style.background = c.hex;
+        b.setAttribute("aria-label", c.name);
+        b.setAttribute("role", "option");
+        b.setAttribute("aria-pressed", index === 1 ? "true" : "false");
+        b.addEventListener("click", function () { setColor(c.hex, b); });
+        swatchesEl.appendChild(b);
+      });
+    }
+
+    function resetAll() {
+      fillCtx.save();
+      fillCtx.setTransform(1, 0, 0, 1, 0, 0);
+      fillCtx.clearRect(0, 0, fillCanvas.width, fillCanvas.height);
+      fillCtx.restore();
+      strokeCtx.save();
+      strokeCtx.setTransform(1, 0, 0, 1, 0, 0);
+      strokeCtx.clearRect(0, 0, strokeCanvas.width, strokeCanvas.height);
+      strokeCtx.restore();
+      autoFilled = false;
+      filling = false;
+      coverage = 0;
+      pointerId = null;
+      drawing = false;
+      strokeLive = false;
+      yay.classList.remove("show");
+      updateCoverage(false);
+      setStatus(false, false);
+    }
+
+    function onPointerDown(e) {
+      if (pointerId !== null) return;
+      if (e.button !== undefined && e.button !== 0) return;
+      var p = eventToLocal(e);
+      pointerId = e.pointerId;
+      drawing = true;
+      strokeLive = false;
+      downX = p.x;
+      downY = p.y;
+      lastX = p.x;
+      lastY = p.y;
+      downT = performance.now();
+      downInside = isInside(p.x, p.y);
+      lastInside = downInside;
+      maxMove = 0;
+      setStatus(downInside, true);
+      if (stage.setPointerCapture) {
+        try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+      if (e.cancelable) e.preventDefault();
+    }
+
+    function onPointerMove(e) {
+      var p = eventToLocal(e);
+      var inside = isInside(p.x, p.y);
+      if (pointerId === null || e.pointerId !== pointerId) {
+        setStatus(inside, true);
+        return;
+      }
+      var dist = Math.hypot(p.x - downX, p.y - downY);
+      if (dist > maxMove) maxMove = dist;
+      setStatus(inside, true);
+      if (mode === "brush" && drawing && maxMove >= DRAW_MOVE) {
+        walkSegment(lastX, lastY, p.x, p.y);
+        lastX = p.x;
+        lastY = p.y;
+        scheduleCoverage(true);
+      }
+      if (e.cancelable) e.preventDefault();
+    }
+
+    function endPointer(e) {
+      if (pointerId === null || (e && e.pointerId !== pointerId)) return;
+      var p = e && e.clientX !== undefined ? eventToLocal(e) : { x: lastX, y: lastY };
+      var dt = performance.now() - downT;
+      var wasTap = maxMove < TAP_MOVE && dt < TAP_MS;
+      var insideNow = isInside(p.x, p.y);
+      var didDraw = mode === "brush" && maxMove >= DRAW_MOVE;
+
+      if (wasTap && (downInside || insideNow)) {
+        if (mode === "bucket") {
+          animateFill(p.x, p.y);
+        } else {
+          maybeWiggleFromTap();
+        }
+      } else if (didDraw) {
+        if (hardenRaf) {
+          cancelAnimationFrame(hardenRaf);
+          hardenRaf = 0;
+        }
+        hardenClip(strokeCtx);
+        updateCoverage(true);
+      }
+
+      drawing = false;
+      strokeLive = false;
+      pointerId = null;
+      setStatus(insideNow, e && e.type !== "pointerleave" && e.type !== "pointercancel");
+    }
+
+    function onPointerUp(e) {
+      endPointer(e);
+    }
+
+    function onPointerLeave(e) {
+      if (pointerId === null) setStatus(false, false);
+    }
+
+    stage.addEventListener("pointerdown", onPointerDown);
+    stage.addEventListener("pointermove", onPointerMove);
+    stage.addEventListener("pointerup", onPointerUp);
+    stage.addEventListener("pointercancel", onPointerUp);
+    stage.addEventListener("pointerleave", onPointerLeave);
+    stage.addEventListener("lostpointercapture", function (e) {
+      if (e.pointerId === pointerId) endPointer(e);
+    });
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    window.addEventListener("pointermove", function (e) {
+      if (pointerId !== null && e.pointerId === pointerId) onPointerMove(e);
+    });
+    stage.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+    brushBtn.addEventListener("click", function () { setMode("brush"); });
+    bucketBtn.addEventListener("click", function () { setMode("bucket"); });
+    wiggleBtn.addEventListener("click", function () { playWiggle(false); });
+    resetBtn.addEventListener("click", resetAll);
+
+    window.addEventListener("resize", function () {
+      resizeCanvases();
+    });
+
+    buildSwatches();
+    setupMask();
+    resizeCanvases();
+    updateCoverage(false);
+
+    window.__twinkle = {
+      isInside: isInside,
+      computeCoverage: computeCoverage,
+      updateCoverage: updateCoverage,
+      playWiggle: playWiggle,
+      getColor: function () { return color; },
+      getMode: function () { return mode; },
+      getCoverage: function () { return coverage; }
+    };
+  })();
+  </script>
+  <style>
+    @keyframes cssWiggle {
+      0% { transform: none; }
+      20% { transform: rotate(-8deg) scale(1.1, 0.88) translateY(-8px); }
+      40% { transform: rotate(8deg) scale(0.9, 1.1) translateY(-18px); }
+      60% { transform: rotate(-5deg) scale(1.06, 0.94) translateY(-6px); }
+      80% { transform: rotate(3deg) scale(0.98, 1.03) translateY(-2px); }
+      100% { transform: none; }
+    }
+    .stage.css-wiggle { animation: cssWiggle 0.62s cubic-bezier(0.22, 1, 0.36, 1); }
+  </style>
+</body>
+</html>
